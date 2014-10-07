@@ -12,7 +12,7 @@
 		<script src="<?php echo base_url('/static/js/addons/sticky.js') ?>"></script>
 		<script src="<?php echo base_url('/static/js/jquery.dataTables.min.js') ?>"></script>
 		<link rel="stylesheet" href="<?php echo base_url('/static/css/uikit.gradient.min.css') ?>"/>
-		<link rel="stylesheet" href="<?php echo base_url('/static/css/addons/uikit.gradient.min.css') ?>"/>
+		<link rel="stylesheet" href="<?php echo base_url('/static/css/addons/uikit.gradient.addons.min.css') ?>"/>
 		<link rel="stylesheet" href="<?php echo base_url('/static/css/jquery.dataTables.min.css') ?>"/>
 
 		<!--[if gte IE 9]>
@@ -93,8 +93,25 @@
 				$this->load->view('common/header');
 				if(!isset($hide_alerts)) { 
 					$this->load->view('common/alert');
-				} 
-				echo $content;
+				}
+				if($has_sidebar) { 
+				?>
+					<div class="uk-grid" data-uk-grid-margin="">
+					    <div class="uk-width-medium-2-10 uk-hidden-small">
+					        <?php echo $sidebar ?>
+					    </div>
+					    <div class="uk-width-medium-8-10 uk-width-small-1-1">
+					        <?php echo $content ?>
+					    </div>
+					    <div class="uk-width-1-1 uk-visible-small">
+						    <?php echo $sidebar ?>
+					    </div>
+					</div>
+				<?php
+				}
+				else {
+					echo $content;
+				}
 			?>
 		</div> <!-- End of 'container'-->
 	</body>

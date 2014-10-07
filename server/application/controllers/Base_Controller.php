@@ -14,6 +14,7 @@ class Base_Controller extends CI_Controller{
 
     public $controller_name = null;
     public $requires_auth = false;
+    public $sidebar = null;
 
     public function __construct(){
         parent::__construct();
@@ -50,7 +51,6 @@ class Base_Controller extends CI_Controller{
         }
     }
 
-
     protected function _show_view($view, $title){
         if(empty($this->data)){
             $this->data = array();
@@ -64,6 +64,13 @@ class Base_Controller extends CI_Controller{
             $output = $content;
         }
         else{
+            if($this->sidebar != null && is_array($this->sidebar) && count($this->sidebar) > 0) {
+                $this->data['has_sidebar'] = true;
+                $this->data['sidebar'] = $this->load->view("common/sidebar", array('sidebar' => $this->sidebar), true);
+            }
+            else {
+                $this->data['has_sidebar'] = false;
+            }
             $this->data['content'] = $content;
             $output = $this->load->view('common/main', $this->data, true);
         }
