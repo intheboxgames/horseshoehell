@@ -9,127 +9,67 @@ if ( ! defined('BASEPATH')) exit('No direct script access allowed');
  *      
  *      2014-10-06  Luke Stuff   Creation
  */
+
 class Base_Controller extends CI_Controller{
 
     public $controller_name = null;
-    public $is_authed = false;
-    public $uid = 0;
-    public $device_id = 0;
+    public $requires_auth = false;
 
     public function __construct(){
         parent::__construct();
 
-        $this->load->model('device');
-        $this->load->model('user');
+        $this->load->library('Auth_library', null, 'auth');
+        $this->load->library('Message_library', null, 'message');
 
         $this->init();
     }
 
     public function init(){
 
-        $this->is_authed = false;
-        $this->load->library('user_agent');
-        if(ENVIRONMENT == 'production' && $this->agent->agent_string() != "UnityPlayer/4.5.2f1 (http://unity3d.com)") {
-            // Oh No! These requests should always come from unity player.
-            $response = new stdClass();
-            $response->status = 'not_authed';
-            $this->send_response($response);
-            return;
-        }
-
         log_message('debug', 'Initializing '.$this->controller_name);
-        if($this->controller_name && $this->controller_name == 'login'){
-            return;
+
+        if(!$this->auth->logged_in() && $this->requires_auth){
+            log_message('info', 'Redirecting to Login from '.$this->controller_name);
+            redirect('/login');
         }
 
-        $this->set_global_user();
-        
-        if(!$this->logged_in()){
-            log_message('debug', 'Redirecting to Login from '.$this->controller_name);
-            $response = new stdClass();
-            $response->status = "not_authed";
-            $this->send_response($response);
-            return;
-        }
+        $this->auth->set_global_user();
 
         global $user;
-        if(!$user){
-            log_message('error','Invalid User!');
-            $response = new stdClass();
-            $response->status = "not_authed";
-            $this->send_response($response);
-            return;
+        if(!$user && $this->requires_auth){
+            $this->message->add_error('Invalid User!');
+            redirect('login');
         }
-    }
-  
-    public function logged_in() {
-        return $this->is_authed != 0;
-    }
-
-    public function set_global_user(){
-        $this->is_authed = false;
-        global $user;
-        if(ENVIRONMENT == 'development' && $this->input->get('token') != null) {
-            $steam_id = $this->input->get('steam');
-            $device_id = $this->input->get('token');
+        else if($user) {
+            $this->data['is_authed'] = true;
+            $this->data['user'] = $user;
         }
         else {
-            $steam_id = $this->input->post('steam');
-            $device_id = $this->input->post('token');
+            $this->data['is_authed'] = false;
+            $this->data['user'] = null;
         }
-        $device = $this->device->find_by_device_id($device_id);
-        if(is_null($device) || empty($device)) {
-            log_message('error', 'Failed to find valid device for device id - ' . $device_id);
-            return;
-        }
-        $user = $this->user->get($device->uid);
-        if(is_null($user) || empty($user)) {
-            log_message('error', 'Failed to find valid user for  uid - ' . $device->uid);
-            return;
-        }
-        $user->device = $device;
-        $this->uid = $user->id;
-        $this->device_id = $device->device_id;
-        $this->is_authed = true;
     }
 
-    public function send_response($data) {
 
-        $this->output->set_content_type("application/json");
-        $this->output->set_output(json_encode($data));
-    }
+    protected function _show_view($view, $title){
+        if(empty($this->data)){
+            $this->data = array();
+        }
+        $this->data['title'] = $title;
 
-    public function current_session($uid) {
+        $content = $this->load->view($view, $this->data, true);
 
-        $this->load->model("usersession");
-        $current_session = $this->usersession->get_current($uid);
-
-        // no current session so create a new one
-        if(is_null($current_session) || empty($current_session)) {
-            $current_session = $this->start_session($uid);
+        if(!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest')
+        {
+            $output = $content;
+        }
+        else{
+            $this->data['content'] = $content;
+            $output = $this->load->view('common/main', $this->data, true);
         }
 
-        $session_end_time = strtotime($current_session->end_time);
+        $this->message->clear_messages('all');
 
-        // Make sure this session is still valid, it's valid for 15 minutes
-        if($session_end_time + (15 * 60) < gmmktime() ) {
-            $current_session = $this->start_session($uid);
-        }
-
-        $current_session->end_time = gmdate('Y-m-d H:i:s');
-        $current_session->is_valid = 1; // sessions aren't valid until being updated at least once
-        return $current_session;
-    }
-
-    public function start_session($uid) {
-        $this->load->model("usersession");
-        $current_session = new stdClass();
-        $current_session->uid = $uid;
-        $current_session->start_time = gmdate('Y-m-d H:i:s');
-        $current_session->end_time = gmdate('Y-m-d H:i:s');
-        $current_session->is_valid = 0;
-        $current_session->levels_played = 0;
-        $current_session->id = $this->usersession->create($current_session);
-        return $current_session;
+        $this->output->set_output($output);
     }
 }

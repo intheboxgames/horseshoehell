@@ -183,13 +183,13 @@ $config['directory_trigger']	= 'd'; // experimental not currently in use
 switch (ENVIRONMENT)
 {
 	case 'development':
-		$config['log_threshold'] = 2;
+		$config['log_threshold'] = 4;
 		break;
 	case 'testing':
 		$config['log_threshold'] = 2;
 		break;
 	case 'production':
-		$config['log_threshold'] = 2;
+		$config['log_threshold'] = 1;
 		break;
 	default:
 		exit('The application environment is not set correctly.');
@@ -369,6 +369,23 @@ $config['rewrite_short_tags'] = FALSE;
 |
 */
 $config['proxy_ips'] = '';
+
+
+/* Custom config Options */
+$config['admin_group'] = 'admin';
+
+$config['hash_method'] = 'sha1';
+$config['auth_rounds'] = 8;
+$config['min_password_length']        = 8;
+$config['max_password_length']        = 20;
+$config['remember_users']             = TRUE;
+$config['user_expire']                = 86500;
+$config['user_extend_on_login']       = FALSE;
+$config['track_login_ip_address']     = TRUE;
+$config['forgot_password_expiration'] = 0;
+$config['salt_length'] = 10;
+$config['store_salt']  = FALSE;
+
 
 
 /* End of file config.php */

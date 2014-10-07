@@ -5,17 +5,17 @@ if ( ! defined('BASEPATH')) exit('No direct script access allowed');
 require_once APPPATH."models/base_model.php";
 
 /*
- *  Model Class for Device
+ *  Model Class for Routes
  *
  *  Change Log:
  *      
  *      2014-10-06  Luke Stuff   Creation
  */
 
-class Admin_User extends Base_model {
+class Route extends Base_model {
 
     public function __construct(){
-        $this->table_name = 'admin_user';
+        $this->table_name = 'route';
         parent::__construct();
     }
 
