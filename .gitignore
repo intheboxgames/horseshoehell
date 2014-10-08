@@ -1,6 +1,8 @@
-*/config/development
-*/logs/log-*.php
-*/logs/!index.html
-*/cache/*
-*/cache/!index.html
-*/cache/!.htaccess
+server/application/config/development
+server/application/logs/log-*.php
+server/application/logs/!index.html
+server/application/cache/*
+server/application/cache/!index.html
+server/application/cache/!.htaccess
+
+server/application/logs/log-2014-10-07.php
