@@ -118,13 +118,13 @@ class Auth_library
         $user = $this->admin_user->get($user_id);
     }
 
-    /*public function is_admin($id=false)
+    public function is_admin()
     {
-        $admin_group = $this->config->item('admin_group');
-        return $this->in_group($admin_group, $id);
+        global $user;
+        return $user && $user->role == 'admin';
     }
 
-    public function in_group($check_group, $id=false, $check_all = false)
+    /*public function in_group($check_group, $id=false, $check_all = false)
     {
             $this->users->trigger_events('in_group');
 

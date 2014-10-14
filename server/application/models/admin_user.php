@@ -94,117 +94,28 @@ class Admin_User extends Base_model {
         return substr(md5(uniqid(rand(), true)), 0, $this->salt_length);
     }
 
-    public function clear_forgotten_password_code($code) {
-
-        if (empty($code)){
-            $this->message->add_error('invalid_arg');
-            return false;
-        }
-
-        $this->db->where('forgotten_password_code', $code);
-
-        if ($this->db->count_all_results('users') > 0) {
-            $data = array(
-                'forgotten_password_code' => NULL,
-                'forgotten_password_time' => NULL
-            );
-
-            $this->db->update('users', $data, array('forgotten_password_code' => $code));
-
-            return true;
-        }
-
-        return false;
-    }
-
-
-    public function reset_password($identity, $new) {
-
-        if (!$this->identity_check($identity)) {
-            $this->message->add_error('user_not_found');
-            return false;
-        }
-
-
+    public function change_password($email, $new)
+    {
         $query = $this->db->select('id, password, salt')
-                          ->where('username', $identity)
+                          ->where('email', $email)
                           ->limit(1)
                           ->get('admin_user');
 
-        if ($query->num_rows() !== 1) {
-            $this->message->add_error('password_change_unsuccessful');
-            return false;
-        }
-
-        $result = $query->row();
-
-        $new = $this->hash_password($new, $result->salt);
-
-        //store the new password and reset the remember code so all remembered instances have to re-login
-        //also clear the forgotten password code
-        $data = array(
-            'password' => $new,
-            'remember_code' => NULL,
-            'forgotten_password_code' => NULL,
-            'forgotten_password_time' => NULL,
-        );
-
-        $this->db->update('users', $data, array('username' => $identity));
-
-        $return = $this->db->affected_rows() == 1;
-        if ($return)
-        {
-            $this->message->add_success('password_change_successful');
-        }
-        else
-        {
-            $this->message->add_error('password_change_unsuccessful');
-        }
-
-        return $return;
-    }
-
-    public function change_password($identity, $old, $new)
-    {
-        $query = $this->db->select('id, password, salt')
-                          ->where('username', $identity)
-                          ->limit(1)
-                          ->get('users');
-
         if ($query->num_rows() !== 1)
         {
-            $this->message->add_error('password_change_unsuccessful');
             return false;
         }
 
         $user = $query->row();
 
-        $old_password_matches = $this->hash_password_db($user->id, $old);
+        $salt = (empty($user->salt) || strlen($user->salt) == 0) ? ($this->store_salt ? $this->salt() : false) : $user->salt;
+        $hashed_new_password  = $this->hash_password($new, $salt);
+        $data = array(
+            'password' => $hashed_new_password,
+            'salt' => $salt,
+        );
 
-        if ($old_password_matches === true)
-        {
-            //store the new password and reset the remember code so all remembered instances have to re-login
-            $hashed_new_password  = $this->hash_password($new, $user->salt);
-            $data = array(
-                'password' => $hashed_new_password,
-                'remember_code' => NULL,
-            );
-
-            $successfully_changed_password_in_db = $this->db->update('admin_user', $data, array('username' => $identity));
-            if ($successfully_changed_password_in_db)
-            {
-                $this->message->add_success('password_change_successful');
-            }
-            else
-            {
-                $this->message->add_error('password_change_unsuccessful');
-            }
-
-            return $successfully_changed_password_in_db;
-        }
-
-        $this->message->add_error('password_change_unsuccessful');
-        return false;
+        return $this->db->update('admin_user', $data, array('email' => $email));
     }
 
     public function email_check($email = '')
@@ -219,54 +130,37 @@ class Admin_User extends Base_model {
                         ->count_all_results('admin_user') > 0;
     }
 
-    public function register($username, $password, $email, $additional_data = array(), $roles = array())
+    public function register($email, $password, $first_name, $last_name, $role)
     {
-        if ($this->username_check($username))
+        if ($this->email_check($email))
         {
-            $this->message->add_error('account_creation_duplicate_username');
+            $this->message->add_error('That email already exists, please use a different one');
             return false;
         }
 
-        // IP Address
-        $ip_address = $this->_prepare_ip($this->input->ip_address());
-        $salt       = $this->store_salt ? $this->salt() : false;
-        if($password){
-            $password   = $this->hash_password($password, $salt);
+        $salt = $this->salt();
+        if($password) {
+            $password = $this->hash_password($password, $salt);
         }
 
         // Users table.
         $data = array(
-            'username'   => $username,
-            'password'   => $password,
-            'email'      => $email,
-            'ip_address' => $ip_address,
-            'create_date' => time(),
+            'email' => $email,
+            'password' => $password,
+            'first_name' => $first_name,
+            'last_name' => $last_name,
+            'role' => $role,
+            'salt' => $salt,
+            'created' => time(),
             'last_login' => time(),
-            'active'     => 1,
         );
 
-        if ($this->store_salt)
-        {
-            $data['salt'] = $salt;
-        }
-
         //filter out any data passed that doesnt have a matching column in the users table
-        //and merge the set user data and the additional data
-        $user_data = array_merge($this->_filter_data('users', $additional_data), $data);
+        $user_data = $this->_filter_data('admin_user', $data);
 
-        $this->db->insert('users', $user_data);
+        $this->db->insert('admin_user', $user_data);
 
         $id = $this->db->insert_id();
-
-        //add to roles
-        // if not role then default to player
-        if(empty($roles)){
-            $roles = array(10);
-        }
-        foreach ($roles as $role)
-        {
-            $this->add_role($role, $id);
-        }
 
         return (isset($id)) ? $id : false;
     }
@@ -278,7 +172,7 @@ class Admin_User extends Base_model {
             return false;
         }
 
-        $query = $this->db->select('id, first_name, last_name, role, email, password, last_login')
+        $query = $this->db->select('*')
                           ->where('email', $this->db->escape_str($email))
                           ->limit(1)
                           ->get('admin_user');
@@ -288,7 +182,7 @@ class Admin_User extends Base_model {
 
             $password = $this->hash_password_db($user->id, $password);
 
-            if ($password === true || $user->email == "admin@horseshoehellapp.com") {
+            if ($password === true) {
                 $this->set_session($user);
 
                 $this->update_last_login($user->id);
@@ -333,7 +227,7 @@ class Admin_User extends Base_model {
 
     public function update($id, $data){
 
-        if(empty($id) || empty($data) || !is_array($data)){
+        if(empty($id) || empty($data)){
             $this->message->add_error('invalid_arg');
             return false;
         }
@@ -359,14 +253,11 @@ class Admin_User extends Base_model {
 
         if ($this->db->trans_status() === false){
             $this->db->trans_rollback();
-
-            $this->message->add_error('update_unsuccessful');
             return false;
         }
 
         $this->db->trans_commit();
 
-        $this->message->add_success('update_successful');
         return true;
     }
 
@@ -390,13 +281,11 @@ class Admin_User extends Base_model {
         if ($this->db->trans_status() === false)
         {
             $this->db->trans_rollback();
-            $this->message->add_error('delete_unsuccessful');
             return false;
         }
 
         $this->db->trans_commit();
 
-        $this->message->add_success('delete_successful');
         return true;
     }
 
@@ -455,7 +344,7 @@ class Admin_User extends Base_model {
 
             set_cookie(array(
                 'name'   => 'email',
-                'value'  => $user->{'email'},
+                'value'  => $user->email,
                 'expire' => $expire
             ));
 
@@ -477,7 +366,7 @@ class Admin_User extends Base_model {
         }
 
         //get the user
-        $query = $this->db->select('email'.', id, first_name, last_name, role, email, last_login')
+        $query = $this->db->select('*')
                           ->where('email', get_cookie('email'))
                           ->where('remember_code', get_cookie('remember_code'))
                           ->limit(1)

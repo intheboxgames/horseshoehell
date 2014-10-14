@@ -12,14 +12,70 @@ class Manage extends Base_Controller {
             'walls' => array('text' => "Walls", 'link' => 'manage/walls', 'active' => false),
             'routes' => array('text' => "Routes", 'link' => 'manage/routes', 'active' => false),
             'teams' => array('text' => "Teams", 'link' => 'manage/teams', 'active' => false),
-            'users' => array('text' => "Users", 'link' => 'manage/users', 'active' => false),
         );
         parent::__construct();
     }
 
-	public function index() {
-        $this->routes();
-	}
+    public function index() {
+        $this->_show_view('manage/manage', "Manage");
+    }
+
+    public function walls($action = 'view') {
+
+        $this->load->model("wall");
+
+        $this->sidebar['walls']['active'] = true;
+
+        switch($action) {
+            case 'add':
+                $wall = new stdClass();
+                $wall->name = $this->input->post('name');
+                $wall->side = $this->input->post('side');
+
+                $wall->id = $this->wall->create($wall);
+                if(!$wall->id) {
+                    $this->message->add_error("There was a problem saving the wall. Please try again.");
+                }
+                else {
+                    $this->message->add_success("Wall successfully added");
+                }
+                redirect(base_url("manage/walls"));
+                break;
+            case 'edit':
+                $wall = new stdClass();
+                $wall->id = $this->input->post('id');
+                $wall->name = $this->input->post('name');
+                $wall->side = $this->input->post('side');
+
+                if(!$this->wall->update($wall)) {
+                    $this->message->add_error("There was a problem saving the wall. Please try again.");
+                }
+                else {
+                    $this->message->add_success("Wall successfully updated");
+                }
+                redirect(base_url("manage/walls"));
+                break;
+            case 'view':
+            default:
+                $this->load->model("route");
+
+                $wall_list = $this->wall->get_all();
+                $route_count = $this->route->get_route_count_by_wall();
+
+                $route_count_map = array();
+                foreach($route_count as $route) {
+                    $route_count_map[$route->wall] = $route->routes;
+                }
+
+                foreach($wall_list as $wall) {
+                    $wall->route_count = !empty($route_count_map[$wall->id]) ? $route_count_map[$wall->id] : 0;
+                }
+
+                $this->data['wall_list'] = $wall_list;
+                $this->_show_view('manage/walls', "Manage Walls");
+                break;
+        }
+    }
 
     public function routes($action = 'view') {
 

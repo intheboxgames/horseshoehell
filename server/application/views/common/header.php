@@ -7,6 +7,11 @@
                 <li class=""><a href="<?php echo base_url('/climbs'); ?>">Routes</a></li>
                 <?php if($this->auth->logged_in()) { ?>
                     <li class="" style="float:right;"><a href="<?php echo base_url('/login/logout'); ?>">Logout</a></li>
+                    <?php if($this->auth->is_admin()) { ?>
+                        <li class="" style="float:right;"><a href="<?php echo base_url('/users/'); ?>">Manage Users</a></li>
+                    <?php } else { ?>
+                        <li class="" style="float:right;"><a href="<?php echo base_url('/users/'); ?>">Account</a></li>
+                    <?php } ?>
                     <li class="" style="float:right;"><a href="<?php echo base_url('/manage/'); ?>">Edit Content</a></li>
                 <?php } else { ?>
                     <li class="" style="float:right;"><a href="<?php echo base_url('/login'); ?>">Login</a></li>
@@ -27,6 +32,11 @@
                 <li class=""><a href="<?php echo base_url('/climbs'); ?>">Routes</a></li>
                 <?php if($this->auth->logged_in()) { ?>
                     <li class=""><a href="<?php echo base_url('/manage/'); ?>">Edit Content</a></li>
+                    <?php if($this->auth->is_admin()) { ?>
+                        <li class=""><a href="<?php echo base_url('/users/'); ?>">Manage Users</a></li>
+                    <?php } else { ?>
+                        <li class=""><a href="<?php echo base_url('/users/'); ?>">Account</a></li>
+                    <?php } ?>
                     <li class=""><a href="<?php echo base_url('/login/logout'); ?>">Logout</a></li>
                 <?php } else { ?>
                     <li class=""><a href="<?php echo base_url('/login'); ?>">Login</a></li>

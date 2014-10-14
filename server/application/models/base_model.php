@@ -76,39 +76,10 @@ class Base_model extends CI_Model {
     	return $result->result();
     }
 
-    public function save($data){
-
-        $data = $this->_filter_data($this->table_name, $data);
-
-        if(isset($data['id']) && !empty($data['id']) || is_numeric($data['id'])){
-        	$id = $data['id'];
-        	unset($data['id']);
-        	$this->db->update($this->table_name, $data, array('id' => $id));
-
-        	if($this->db->affected_rows() > 0){
-        		log_message('debug','Successfully updated on '.$this->table_name);
-        		return $id;
-        	}
-        	else{
-        		log_message('warning','Failed to updated on '.$this->table_name. ' with id '.$id.'. Attempting to create new entry instead.');
-        	}
-        }
-
-        // if we got here then the update failed or there was no id so insert a new column
-        $this->db->insert($this->table_name, $data);
-        $id = $this->db->insert_id();
-
-        if($id){
-        	log_message('debug','Successfully created '.$this->table_name);
-        }
-        else{
-        	log_message('warning','Failed to save on '.$this->table_name.' with Error: '.$this->db->_error_message());
-        }
-        return $id;
-    }
 
     public function create($data)
     {
+        global $user;
         if(isset($data->id)){
             unset($data->id);
         }
@@ -125,9 +96,38 @@ class Base_model extends CI_Model {
 
         if($id){
         	log_message('debug','Successfully created '.$this->table_name);
+            $data['id'] = $id;
+
+            if($user) {
+                $action = [
+                    'admin_user_id' => $user->id,
+                    'status' => 'success',
+                    'status_message' => '',
+                    'table_effected' => $this->table_name,
+                    'action_type' => 'create',
+                    'entry_id' => $id,
+                    'pre_data' => '',
+                    'post_data' => json_encode($data),
+                ];
+                $this->db->insert('admin_action_log', $action);
+            }
         }
         else{
         	log_message('warning','Failed to create in '.$this->table_name.' with Error: '.$this->db->_error_message());
+
+            if($user) {
+                $action = [
+                    'admin_user_id' => $user->id,
+                    'status' => 'failed',
+                    'status_message' => $this->db->_error_message(),
+                    'table_effected' => $this->table_name,
+                    'action_type' => 'create',
+                    'entry_id' => '-1',
+                    'pre_data' => '',
+                    'post_data' => json_encode($data),
+                ];
+                $this->db->insert('admin_action_log', $action);
+            }
         }
         return $id;
     }
@@ -135,6 +135,7 @@ class Base_model extends CI_Model {
 
     public function update($data)
     {
+        global $user;
         $data = $this->_filter_data($this->table_name, $data);
 
         if(!isset($data['id']) || empty($data['id']) || !is_numeric($data['id'])){
@@ -145,20 +146,50 @@ class Base_model extends CI_Model {
 
     	$id = $data['id'];
     	unset($data['id']);
+        $pre_data = $this->get($id);
     	$this->db->update($this->table_name, $data, array('id' => $id));
 
         if($this->db->affected_rows() == 0){
         	log_message('error','Failed to update on '.$this->table_name.' with Error: '.$this->db->_error_message());
+
+            if($user) {
+                $action = [
+                    'admin_user_id' => $user->id,
+                    'status' => 'failed',
+                    'status_message' => $this->db->_error_message(),
+                    'table_effected' => $this->table_name,
+                    'action_type' => 'update',
+                    'entry_id' => $id,
+                    'pre_data' => json_encode($pre_data),
+                    'post_data' => json_encode($data),
+                ];
+                $this->db->insert('admin_action_log', $action);
+            }
         	return false;
         }
 
         log_message('debug','Successfully updated on '.$this->table_name);
+
+        if($user) {
+            $action = [
+                'admin_user_id' => $user->id,
+                'status' => 'success',
+                'status_message' => '',
+                'table_effected' => $this->table_name,
+                'action_type' => 'update',
+                'entry_id' => $id,
+                'pre_data' => json_encode($pre_data),
+                'post_data' => json_encode($data),
+            ];
+            $this->db->insert('admin_action_log', $action);
+        }
         return true;
     }
 
 
     public function delete($id)
     {
+        global $user;
         if(!$id || empty($id) || !is_numeric($id)){
         	log_message('error','Failed to update entry for table '.$this->table_name.' because no ID value was present - '.var_export($id, TRUE));
             return false;
@@ -166,18 +197,47 @@ class Base_model extends CI_Model {
 
         $this->db->trans_begin();
 
+        $pre_data = $this->get($id);
         $this->db->delete($this->table_name, array('id' => $id));
 
         if ($this->db->trans_status() === false)
         {
         	log_message('error','Failed to create '.$this->table_name.' with Error: '.$this->db->_error_message());
             $this->db->trans_rollback();
+
+            if($user) {
+                $action = [
+                    'admin_user_id' => $user->id,
+                    'status' => 'failed',
+                    'status_message' => $this->db->_error_message(),
+                    'table_effected' => $this->table_name,
+                    'action_type' => 'update',
+                    'entry_id' => $id,
+                    'pre_data' => json_encode($pre_data),
+                    'post_data' => '',
+                ];
+                $this->db->insert('admin_action_log', $action);
+            }
             return false;
         }
 
         $this->db->trans_commit();
 
         log_message('debug','Successfully deleted from '.$this->table_name);
+
+        if($user) {
+            $action = [
+                'admin_user_id' => $user->id,
+                'status' => 'delete',
+                'status_message' => '',
+                'table_effected' => $this->table_name,
+                'action_type' => 'update',
+                'entry_id' => $id,
+                'pre_data' => json_encode($pre_data),
+                'post_data' => '',
+            ];
+            $this->db->insert('admin_action_log', $action);
+        }
         return true;
     }
 
