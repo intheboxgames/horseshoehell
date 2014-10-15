@@ -11,9 +11,11 @@
 		<script src="<?php echo base_url('/static/js/addons/notify.js') ?>"></script>
 		<script src="<?php echo base_url('/static/js/addons/sticky.js') ?>"></script>
 		<script src="<?php echo base_url('/static/js/jquery.dataTables.min.js') ?>"></script>
+		<script src="<?php echo base_url('/static/js/select2.js') ?>"></script>
 		<link rel="stylesheet" href="<?php echo base_url('/static/css/uikit.gradient.min.css') ?>"/>
 		<link rel="stylesheet" href="<?php echo base_url('/static/css/addons/uikit.gradient.addons.min.css') ?>"/>
 		<link rel="stylesheet" href="<?php echo base_url('/static/css/jquery.dataTables.min.css') ?>"/>
+		<link rel="stylesheet" href="<?php echo base_url('/static/css/select2.css') ?>"/>
 
 		<!--[if gte IE 9]>
 		  	<style type="text/css">

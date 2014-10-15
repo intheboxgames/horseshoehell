@@ -10,19 +10,19 @@
 </div>
 
 <div class="uk-grid" data-uk-grid-margin="">
-    <div class="uk-width-medium-1-3">
+    <div class="uk-width-medium-1-3 uk-width-small-1-1">
         <a href="<?php echo base_url('/reports'); ?>" class="uk-panel uk-panel-box" style="min-height: 8.5em;">
             <h3 class="uk-panel-title">Scores</h3>
             View the results of the competition, past years scores, and the highest scores ever.
         </a>
     </div>
-    <div class="uk-width-medium-1-3">
-        <a href="<?php echo base_url('/climbs'); ?>" class="uk-panel uk-panel-box" style="min-height: 8.5em;">
+    <div class="uk-width-medium-1-3 uk-width-small-1-1">
+        <a href="<?php echo base_url('/routes'); ?>" class="uk-panel uk-panel-box" style="min-height: 8.5em;">
             <h3 class="uk-panel-title">Routes</h3>
             View a list of all climbs on the ranch. Create your own set lists and share beta with your fellow climbers.
         </a>
     </div>
-    <div class="uk-width-medium-1-3">
+    <div class="uk-width-medium-1-3 uk-width-small-1-1">
          <a href="http://www.twofourhell.com" target="_blank" class="uk-panel uk-panel-box" style="min-height: 8.5em;">
             <h3 class="uk-panel-title">Horseshoe Hell</h3>
             Go to the official 24 Hours of Horseshoe Hell site to get all the event beta.

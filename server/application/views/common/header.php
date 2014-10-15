@@ -4,7 +4,7 @@
             <ul class="uk-navbar-nav uk-hidden-small" style="width:100%;">
                 <li class=""><a href="<?php echo base_url(''); ?>">Home</a></li>
                 <li class=""><a href="<?php echo base_url('/reports'); ?>">Scores</a></li>
-                <li class=""><a href="<?php echo base_url('/climbs'); ?>">Routes</a></li>
+                <li class=""><a href="<?php echo base_url('/routes'); ?>">Routes</a></li>
                 <?php if($this->auth->logged_in()) { ?>
                     <li class="" style="float:right;"><a href="<?php echo base_url('/login/logout'); ?>">Logout</a></li>
                     <?php if($this->auth->is_admin()) { ?>
@@ -29,7 +29,7 @@
         <ul class="uk-nav uk-nav-offcanvas uk-nav-offcanvas-main uk-nav-parent-icon" data-uk-nav="">
                 <li class=""><a href="<?php echo base_url(''); ?>">Home</a></li>
                 <li class=""><a href="<?php echo base_url('/reports'); ?>">Scores</a></li>
-                <li class=""><a href="<?php echo base_url('/climbs'); ?>">Routes</a></li>
+                <li class=""><a href="<?php echo base_url('/routes'); ?>">Routes</a></li>
                 <?php if($this->auth->logged_in()) { ?>
                     <li class=""><a href="<?php echo base_url('/manage/'); ?>">Edit Content</a></li>
                     <?php if($this->auth->is_admin()) { ?>
